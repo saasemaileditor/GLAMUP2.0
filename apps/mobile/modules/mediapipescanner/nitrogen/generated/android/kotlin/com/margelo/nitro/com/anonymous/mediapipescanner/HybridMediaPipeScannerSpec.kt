@@ -31,7 +31,7 @@ abstract class HybridMediaPipeScannerSpec: HybridObject() {
   // Methods
   @DoNotStrip
   @Keep
-  abstract fun detectFaces(frame: com.margelo.nitro.image.HybridImageSpec): Array<FaceBounds>
+  abstract fun detectFaces(frame: com.margelo.nitro.image.HybridImageSpec): Array<FaceDetectionResult>
 
   // Default implementation of `HybridObject.toString()`
   override fun toString(): String {
