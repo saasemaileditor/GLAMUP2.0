@@ -1,0 +1,29 @@
+{
+  "name": "mediapipescanner",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "react-native": "src/index.ts",
+  "source": "src/index.ts",
+  "files": [
+    "src",
+    "android",
+    "ios",
+    "nitrogen",
+    "cpp",
+    "!android/build",
+    "!android/.cxx",
+    "!android/.gradle",
+    "!ios/build"
+  ],
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*",
+    "react-native-nitro-modules": "*",
+    "react-native-nitro-image": "*"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "nitro": {
+    "name": "MediaPipeScanner"
+  }
+}
