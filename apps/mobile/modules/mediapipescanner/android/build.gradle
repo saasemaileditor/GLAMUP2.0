@@ -1,0 +1,102 @@
+buildscript {
+  ext.safeExtGet = {prop, fallback ->
+    rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+  }
+  repositories {
+    google()
+    mavenCentral()
+  }
+  dependencies {
+    classpath("com.android.tools.build:gradle:7.3.1")
+    classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22")
+  }
+}
+
+def reactNativeArchitectures() {
+  def value = rootProject.getProperties().get("reactNativeArchitectures")
+  return value ? value.split(",") : ["armeabi-v7a", "x86", "x86_64", "arm64-v8a"]
+}
+
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+android {
+  compileSdkVersion safeExtGet('compileSdkVersion', 34)
+
+  namespace "com.margelo.nitro.com.anonymous.mediapipescanner"
+
+  defaultConfig {
+    minSdkVersion safeExtGet('minSdkVersion', 21)
+    targetSdkVersion safeExtGet('targetSdkVersion', 34)
+    buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", "true"
+    externalNativeBuild {
+      cmake {
+        cppFlags "-O2 -frtti -fexceptions -Wall -fstack-protector-all"
+        abiFilters (*reactNativeArchitectures())
+        arguments "-DANDROID_STL=c++_shared"
+      }
+    }
+  }
+
+  externalNativeBuild {
+    cmake {
+      path "CMakeLists.txt"
+    }
+  }
+
+  buildFeatures {
+    prefab true
+  }
+
+  packagingOptions {
+    excludes = ["META-INF", "META-INF/**", "**/libc++_shared.so", "**/libfbjni.so", "**/libjsi.so", "**/libreactnativejni.so", "**/libturbomodulejsijni.so", "**/libreact_nativemodule_core.so"]
+  }
+
+  sourceSets {
+    main {
+      java.srcDirs += [
+        "../nitrogen/generated/android/kotlin"
+      ]
+    }
+  }
+}
+
+dependencies {
+  implementation "com.facebook.react:react-android"
+  implementation "com.google.mlkit:face-detection:16.1.6"
+  implementation "com.google.android.gms:play-services-tasks:18.0.2"
+  implementation project(":react-native-nitro-modules")
+  implementation project(":react-native-nitro-image")
+}
+
+// Apply Nitrogen autolinking
+apply from: "../nitrogen/generated/android/MediaPipeScanner+autolinking.gradle"
+
+afterEvaluate {
+  // 1. Force task order: build Nitro C++ dependencies before compiling our module's C++
+  tasks.configureEach { task ->
+    if (task.name.startsWith("externalNativeBuild")) {
+      task.mustRunAfter(":react-native-nitro-modules:externalNativeBuildDebug")
+      task.mustRunAfter(":react-native-nitro-modules:externalNativeBuildRelease")
+      task.mustRunAfter(":react-native-nitro-image:externalNativeBuildDebug")
+      task.mustRunAfter(":react-native-nitro-image:externalNativeBuildRelease")
+    }
+  }
+
+  // 2. Touch prefab_config.json in our module to force Gradle/NDK to regenerate CMake package bindings with built .so files
+  def abis = ["armeabi-v7a", "x86", "x86_64", "arm64-v8a"]
+  def searchDir = new File(projectDir, ".cxx")
+  if (searchDir.exists()) {
+    searchDir.eachDir { variantDir ->
+      variantDir.eachDir { randomDir ->
+        abis.each { abi ->
+          def prefabFile = new File(randomDir, "${abi}/prefab_config.json")
+          if (prefabFile.exists()) {
+            prefabFile.setLastModified(System.currentTimeMillis())
+          }
+        }
+      }
+    }
+  }
+}
+

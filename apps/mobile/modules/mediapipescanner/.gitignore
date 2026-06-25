@@ -1,0 +1,4 @@
+# Gradle build folder
+android/build/
+android/.cxx/
+android/.gradle/
