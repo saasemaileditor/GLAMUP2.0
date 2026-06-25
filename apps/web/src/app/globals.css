@@ -1,0 +1,30 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap");
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+body {
+  font-family: var(--font-outfit), "Outfit", sans-serif;
+}
+
+/* Remove default browser focus outlines globally */
+*:focus,
+*:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Elegant Custom Scrollbar (Desktop Only) */
+@media (pointer: fine) {
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #e4e4e7; border-radius: 10px; }
+  .dark ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: #d4d4d8; }
+  .dark ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+}
+
+.disable-transitions,
+.disable-transitions * {
+  transition: none !important;
+}
