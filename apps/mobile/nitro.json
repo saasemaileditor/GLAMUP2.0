@@ -1,0 +1,22 @@
+{
+  "name": "MediaPipeScanner",
+  "cxxNamespace": ["anonymous", "mediapipescanner"],
+  "ios": {
+    "iosModuleName": "MediaPipeScanner",
+    "c++": true
+  },
+  "android": {
+    "androidNamespace": ["com", "anonymous", "mediapipescanner"],
+    "androidCxxLibName": "MediaPipeScanner",
+    "kotlin": true,
+    "c++": true
+  },
+  "autolinking": {
+    "MediaPipeScanner": {
+      "android": {
+        "language": "kotlin",
+        "implementationClassName": "MediaPipeScanner"
+      }
+    }
+  }
+}
