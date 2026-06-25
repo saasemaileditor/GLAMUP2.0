@@ -43,18 +43,26 @@ class MediaPipeScanner(private val context: Context) : HybridMediaPipeScannerSpe
     }
 
     override fun detectFaces(frame: HybridImageSpec): Array<FaceDetectionResult> {
-        val landmarker = faceLandmarker ?: return emptyArray()
+        val landmarker = faceLandmarker ?: run {
+            Log.e(TAG, "FaceLandmarker not initialized!")
+            return emptyArray()
+        }
 
         try {
             val hybridImage = frame as? HybridImage 
                 ?: throw Exception("Provided frame is not a HybridImage instance")
             
             val bitmap: Bitmap = hybridImage.bitmap
+            Log.d(TAG, "Detecting faces in bitmap: ${bitmap.width}x${bitmap.height}")
+
             val mpImage = BitmapImageBuilder(bitmap).build()
 
             val result: FaceLandmarkerResult = landmarker.detect(mpImage)
+            val faceLandmarks = result.faceLandmarks()
 
-            return result.faceLandmarks().map { landmarks ->
+            Log.d(TAG, "MediaPipe detected ${faceLandmarks.size} faces")
+
+            return faceLandmarks.map { landmarks ->
                 // Calculate bounding box from landmarks
                 var minX = 1.0f
                 var maxX = 0.0f

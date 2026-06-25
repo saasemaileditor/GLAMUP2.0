@@ -41,23 +41,33 @@ export default function CameraScreen() {
       'worklet';
       let image: any = null;
       try {
-        // Convert Frame to Nitro Image
+        if (scanner == null) {
+          return;
+        }
+
+        // 1. Convert Frame to Nitro Image
         image = HybridFrameConverter.convertFrameToImage(frame);
         
-        if (image != null && scanner != null) {
-          // Call MediaPipeScanner (Nitro Hybrid Object)
+        if (image != null) {
+          // 2. Call MediaPipeScanner (Nitro Hybrid Object)
           const detectedFaces = scanner.detectFaces(image);
 
-          // Update UI state on JS thread
+          // 3. Update UI state on JS thread using the worklet wrapper
+          // This is the "Permanent Fix" for the threading error
           setFacesJS(detectedFaces);
+
+          // Debug log to verify detection is working and we are on the NEW code
+          if (detectedFaces.length > 0) {
+             console.log(`[GLAMUP-FIX] Detected ${detectedFaces.length} faces with 478 landmarks each.`);
+          }
         }
       } catch (e: any) {
-        console.error("Frame processor error: ", e.message);
+        console.error("[GLAMUP-FIX] Frame processor error: ", e.message);
       } finally {
         if (image != null) {
           image.dispose();
         }
-        frame.dispose();
+        // Note: frame is managed by VisionCamera, no need to manually dispose unless using ref counts
       }
     },
   });

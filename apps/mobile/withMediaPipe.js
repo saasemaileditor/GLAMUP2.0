@@ -21,7 +21,7 @@ const withMediaPipe = (config) => {
     'android',
     async (config) => {
       const projectRoot = config.modRequest.projectRoot;
-      const srcAsset = path.join(projectRoot, '../../assets/face_landmarker.task'); // Or wherever we put it safely
+      const srcAsset = path.join(projectRoot, 'assets/face_landmarker.task');
       const destFolder = path.join(projectRoot, 'android/app/src/main/assets');
       const destAsset = path.join(destFolder, 'face_landmarker.task');
 
