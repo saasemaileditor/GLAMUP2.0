@@ -8,18 +8,24 @@ import com.google.mediapipe.tasks.core.BaseOptions
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarkerResult
-import com.margelo.nitro.image.HybridImageSpec
-import com.margelo.nitro.image.HybridImage
+import com.margelo.nitro.NitroModules
+import com.margelo.nitro.image.Image
+import com.margelo.nitro.image.ImageFormat
+import com.margelo.nitro.image.PixelFormat
 
-class MediaPipeScanner(private val context: Context) : HybridMediaPipeScannerSpec() {
+class MediaPipeScanner : HybridMediaPipeScannerSpec() {
+    private var landmarker: FaceLandmarker? = null
 
-    private var faceLandmarker: FaceLandmarker? = null
-
-    init {
-        setupFaceLandmarker()
+    companion object {
+        private const val TAG = "MediaPipeScanner"
+        var appContext: Context? = null
     }
 
-    private fun setupFaceLandmarker() {
+    private fun getLandmarker(): FaceLandmarker? {
+        if (landmarker != null) return landmarker
+
+        val context = appContext ?: return null
+
         try {
             val baseOptionsBuilder = BaseOptions.builder()
                 .setModelAssetPath("face_landmarker.task")
@@ -31,73 +37,55 @@ class MediaPipeScanner(private val context: Context) : HybridMediaPipeScannerSpe
                 .setMinFaceDetectionConfidence(0.5f)
                 .setMinFacePresenceConfidence(0.5f)
                 .setMinTrackingConfidence(0.5f)
-                .setOutputFaceBlendshapes(false)
-                .setOutputFacialTransformationMatrixes(false)
+                .setOutputFaceBlendshapes(true)
 
-            val options = optionsBuilder.build()
-            faceLandmarker = FaceLandmarker.createFromOptions(context, options)
-            Log.i(TAG, "FaceLandmarker initialized successfully")
+            landmarker = FaceLandmarker.createFromOptions(context, optionsBuilder.build())
+            return landmarker
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to initialize FaceLandmarker: ${e.message}", e)
+            Log.e(TAG, "Failed to create FaceLandmarker: ${e.message}")
+            return null
         }
     }
 
-    override fun detectFaces(frame: HybridImageSpec): Array<FaceDetectionResult> {
-        val landmarker = faceLandmarker ?: run {
-            Log.e(TAG, "FaceLandmarker not initialized!")
+    override fun detectFaces(frame: Image): Array<FaceDetectionResult> {
+        val landmarker = getLandmarker() ?: return emptyArray()
+
+        // 1. Convert Nitro Image to Bitmap
+        // MediaPipe works best with Bitmaps on Android
+        val bitmap = frame.updateBuffer()
+        val mpImage = BitmapImageBuilder(bitmap).build()
+
+        // 2. Detect
+        val result: FaceLandmarkerResult = landmarker.detect(mpImage)
+
+        // 3. Map to our Nitro-compatible result
+        if (result.faceLandmarks().isEmpty()) {
             return emptyArray()
         }
 
-        try {
-            val hybridImage = frame as? HybridImage 
-                ?: throw Exception("Provided frame is not a HybridImage instance")
-            
-            val bitmap: Bitmap = hybridImage.bitmap
-            Log.d(TAG, "Detecting faces in bitmap: ${bitmap.width}x${bitmap.height}")
+        return result.faceLandmarks().map { landmarks ->
+            // Calculate a simple bounding box from landmarks
+            var minX = Float.MAX_VALUE
+            var minY = Float.MAX_VALUE
+            var maxX = Float.MIN_VALUE
+            var maxY = Float.MIN_VALUE
 
-            val mpImage = BitmapImageBuilder(bitmap).build()
+            val nitroLandmarks = landmarks.map { landmark ->
+                minX = minOf(minX, landmark.x())
+                minY = minOf(minY, landmark.y())
+                maxX = maxOf(maxX, landmark.x())
+                maxY = maxOf(maxY, landmark.y())
 
-            val result: FaceLandmarkerResult = landmarker.detect(mpImage)
-            val faceLandmarks = result.faceLandmarks()
-
-            Log.d(TAG, "MediaPipe detected ${faceLandmarks.size} faces")
-
-            return faceLandmarks.map { landmarks ->
-                // Calculate bounding box from landmarks
-                var minX = 1.0f
-                var maxX = 0.0f
-                var minY = 1.0f
-                var maxY = 0.0f
-
-                val landmarksList = landmarks.map { landmark ->
-                    if (landmark.x() < minX) minX = landmark.x()
-                    if (landmark.x() > maxX) maxX = landmark.x()
-                    if (landmark.y() < minY) minY = landmark.y()
-                    if (landmark.y() > maxY) maxY = landmark.y()
-
-                    Landmark(
-                        x = landmark.x().toDouble(),
-                        y = landmark.y().toDouble(),
-                        z = landmark.z().toDouble()
-                    )
-                }
-
-                FaceDetectionResult(
-                    x = minX.toDouble(),
-                    y = minY.toDouble(),
-                    width = (maxX - minX).toDouble(),
-                    height = (maxY - minY).toDouble(),
-                    landmarks = landmarksList.toTypedArray()
-                )
+                Landmark(landmark.x().toDouble(), landmark.y().toDouble(), landmark.z().toDouble())
             }.toTypedArray()
 
-        } catch (e: Exception) {
-            Log.e(TAG, "Face detection failed: ${e.message}", e)
-            return emptyArray()
-        }
-    }
-
-    companion object {
-        private const val TAG = "MediaPipeScanner"
+            FaceDetectionResult(
+                minX.toDouble(),
+                minY.toDouble(),
+                (maxX - minX).toDouble(),
+                (maxY - minY).toDouble(),
+                nitroLandmarks
+            )
+        }.toTypedArray()
     }
 }

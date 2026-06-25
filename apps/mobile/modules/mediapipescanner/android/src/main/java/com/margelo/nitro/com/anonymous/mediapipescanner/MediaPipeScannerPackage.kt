@@ -11,6 +11,7 @@ class MediaPipeScannerPackage : ReactPackage {
   }
 
   override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
+    MediaPipeScanner.appContext = reactContext.applicationContext
     return emptyList()
   }
 
