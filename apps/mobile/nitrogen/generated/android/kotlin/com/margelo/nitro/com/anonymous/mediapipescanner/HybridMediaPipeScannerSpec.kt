@@ -10,7 +10,7 @@ package com.margelo.nitro.com.anonymous.mediapipescanner
 import androidx.annotation.Keep
 import com.facebook.jni.HybridData
 import com.facebook.proguard.annotations.DoNotStrip
-import com.margelo.nitro.camera.HybridFrameSpec
+import com.margelo.nitro.image.HybridImageSpec
 import com.margelo.nitro.core.HybridObject
 
 /**
@@ -31,7 +31,7 @@ abstract class HybridMediaPipeScannerSpec: HybridObject() {
   // Methods
   @DoNotStrip
   @Keep
-  abstract fun detectFaces(frame: com.margelo.nitro.camera.HybridFrameSpec): Array<FaceBounds>
+  abstract fun detectFaces(frame: com.margelo.nitro.image.HybridImageSpec): Array<FaceDetectionResult>
 
   // Default implementation of `HybridObject.toString()`
   override fun toString(): String {
