@@ -13,15 +13,15 @@
 #error NitroModules cannot be found! Are you sure you installed NitroModules properly?
 #endif
 
-// Forward declaration of `FaceBounds` to properly resolve imports.
-namespace margelo::nitro::anonymous::mediapipescanner { struct FaceBounds; }
-// Forward declaration of `HybridFrameSpec` to properly resolve imports.
-namespace margelo::nitro::camera { class HybridFrameSpec; }
+// Forward declaration of `FaceDetectionResult` to properly resolve imports.
+namespace margelo::nitro::anonymous::mediapipescanner { struct FaceDetectionResult; }
+// Forward declaration of `HybridImageSpec` to properly resolve imports.
+namespace margelo::nitro::image { class HybridImageSpec; }
 
-#include "FaceBounds.hpp"
+#include "FaceDetectionResult.hpp"
 #include <vector>
 #include <memory>
-#include <VisionCamera/HybridFrameSpec.hpp>
+#include <NitroImage/HybridImageSpec.hpp>
 
 namespace margelo::nitro::anonymous::mediapipescanner {
 
@@ -54,7 +54,7 @@ namespace margelo::nitro::anonymous::mediapipescanner {
 
     public:
       // Methods
-      virtual std::vector<FaceBounds> detectFaces(const std::shared_ptr<margelo::nitro::camera::HybridFrameSpec>& frame) = 0;
+      virtual std::vector<FaceDetectionResult> detectFaces(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& frame) = 0;
 
     protected:
       // Hybrid Setup

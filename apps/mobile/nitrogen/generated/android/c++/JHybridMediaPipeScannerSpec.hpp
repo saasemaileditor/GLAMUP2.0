@@ -54,7 +54,7 @@ namespace margelo::nitro::anonymous::mediapipescanner {
 
   public:
     // Methods
-    std::vector<FaceBounds> detectFaces(const std::shared_ptr<margelo::nitro::camera::HybridFrameSpec>& frame) override;
+    std::vector<FaceDetectionResult> detectFaces(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& frame) override;
 
   private:
     jni::global_ref<JHybridMediaPipeScannerSpec::JavaPart> _javaPart;

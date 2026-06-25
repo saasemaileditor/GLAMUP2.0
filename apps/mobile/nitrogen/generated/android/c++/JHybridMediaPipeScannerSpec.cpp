@@ -7,17 +7,21 @@
 
 #include "JHybridMediaPipeScannerSpec.hpp"
 
-// Forward declaration of `FaceBounds` to properly resolve imports.
-namespace margelo::nitro::anonymous::mediapipescanner { struct FaceBounds; }
-// Forward declaration of `HybridFrameSpec` to properly resolve imports.
-namespace margelo::nitro::camera { class HybridFrameSpec; }
+// Forward declaration of `FaceDetectionResult` to properly resolve imports.
+namespace margelo::nitro::anonymous::mediapipescanner { struct FaceDetectionResult; }
+// Forward declaration of `Landmark` to properly resolve imports.
+namespace margelo::nitro::anonymous::mediapipescanner { struct Landmark; }
+// Forward declaration of `HybridImageSpec` to properly resolve imports.
+namespace margelo::nitro::image { class HybridImageSpec; }
 
-#include "FaceBounds.hpp"
+#include "FaceDetectionResult.hpp"
 #include <vector>
-#include "JFaceBounds.hpp"
+#include "JFaceDetectionResult.hpp"
+#include "Landmark.hpp"
+#include "JLandmark.hpp"
 #include <memory>
-#include <VisionCamera/HybridFrameSpec.hpp>
-#include <VisionCamera/JHybridFrameSpec.hpp>
+#include <NitroImage/HybridImageSpec.hpp>
+#include <NitroImage/JHybridImageSpec.hpp>
 
 namespace margelo::nitro::anonymous::mediapipescanner {
 
@@ -52,12 +56,12 @@ namespace margelo::nitro::anonymous::mediapipescanner {
   
 
   // Methods
-  std::vector<FaceBounds> JHybridMediaPipeScannerSpec::detectFaces(const std::shared_ptr<margelo::nitro::camera::HybridFrameSpec>& frame) {
-    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<jni::JArrayClass<JFaceBounds>>(jni::alias_ref<margelo::nitro::camera::JHybridFrameSpec::JavaPart> /* frame */)>("detectFaces");
-    auto __result = method(_javaPart, std::dynamic_pointer_cast<margelo::nitro::camera::JHybridFrameSpec>(frame)->getJavaPart());
+  std::vector<FaceDetectionResult> JHybridMediaPipeScannerSpec::detectFaces(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& frame) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<jni::JArrayClass<JFaceDetectionResult>>(jni::alias_ref<margelo::nitro::image::JHybridImageSpec::JavaPart> /* frame */)>("detectFaces");
+    auto __result = method(_javaPart, std::dynamic_pointer_cast<margelo::nitro::image::JHybridImageSpec>(frame)->getJavaPart());
     return [&](auto&& __input) {
       size_t __size = __input->size();
-      std::vector<FaceBounds> __vector;
+      std::vector<FaceDetectionResult> __vector;
       __vector.reserve(__size);
       for (size_t __i = 0; __i < __size; __i++) {
         auto __element = __input->getElement(__i);
