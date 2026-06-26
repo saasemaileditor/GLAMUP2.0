@@ -1,22 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Camera, useCameraDevice, useCameraPermission, useFrameOutput, HybridFrameConverter } from 'react-native-vision-camera';
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NitroModules } from 'react-native-nitro-modules';
-import type { MediaPipeScanner, FaceDetectionResult } from 'mediapipescanner';
+import type { MediaPipeScanner, FaceBounds } from 'mediapipescanner';
 import { runOnJS } from 'react-native-worklets';
-import Svg, { Circle, Path, G } from 'react-native-svg';
+import Svg, { Path, G } from 'react-native-svg';
 
-// Indices for the silhouette/contour of the face (from web app)
+// Indices for the silhouette/contour of the face
 const CONTOUR_INDICES = [
   10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378,
   152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109
 ];
 
 const MESH_COLOR = "#a855f7";       // Purple-500
-const CONTOUR_COLOR = "rgba(168, 85, 247, 0.75)";
 const BRACKET_COLOR = "#a855f7";
 
 // 1. Instantiate the MediaPipeScanner HybridObject from Nitro
@@ -29,7 +28,7 @@ export default function CameraScreen() {
   const device = useCameraDevice('front');
   
   // 2. React state to store the faces for the overlay
-  const [faces, setFaces] = useState<FaceDetectionResult[]>([]);
+  const [faces, setFaces] = useState<FaceBounds[]>([]);
 
   // 3. Worklet wrapper to update JS state from the frame processor (UI thread)
   const setFacesJS = runOnJS(setFaces);
@@ -41,36 +40,106 @@ export default function CameraScreen() {
       'worklet';
       let image: any = null;
       try {
-        if (scanner == null) {
-          return;
-        }
+        if (scanner == null) return;
 
-        // 1. Convert Frame to Nitro Image
+        // Convert Frame to Nitro Image
         image = HybridFrameConverter.convertFrameToImage(frame);
         
         if (image != null) {
-          // 2. Call MediaPipeScanner (Nitro Hybrid Object)
+          // Call MediaPipeScanner
           const detectedFaces = scanner.detectFaces(image);
 
-          // 3. Update UI state on JS thread using the worklet wrapper
-          // This is the "Permanent Fix" for the threading error
+          // Update UI state on JS thread
           setFacesJS(detectedFaces);
 
-          // Debug log to verify detection is working and we are on the NEW code
           if (detectedFaces.length > 0) {
-             console.log(`[GLAMUP-FIX] Detected ${detectedFaces.length} faces with 478 landmarks each.`);
+             console.log(`[GLAMUP-FIX] Detected ${detectedFaces.length} faces.`);
           }
         }
       } catch (e: any) {
         console.error("[GLAMUP-FIX] Frame processor error: ", e.message);
       } finally {
-        if (image != null) {
-          image.dispose();
-        }
-        // Note: frame is managed by VisionCamera, no need to manually dispose unless using ref counts
+        if (image != null) image.dispose();
       }
     },
   });
+
+  // 5. Optimized Mesh Rendering:
+  // We use a single <Path> for all 478 landmarks to minimize SVG nodes.
+  // This is significantly more performant than 478 <Circle> components.
+  const meshOverlay = useMemo(() => {
+    return faces.map((face, faceIndex) => {
+      // Create a single path string for all landmark dots
+      // Each dot is a tiny MoveTo + LineTo (or a small rect)
+      let meshPath = "";
+      face.landmarks.forEach((pt) => {
+        // Draw a tiny 2x2 dot for each landmark
+        meshPath += `M ${pt.x - 0.001} ${pt.y} L ${pt.x + 0.001} ${pt.y} `;
+      });
+
+      // Draw face contour/oval
+      let contourPath = "";
+      CONTOUR_INDICES.forEach((index, i) => {
+        const pt = face.landmarks[index];
+        if (pt) {
+          if (i === 0) contourPath += `M ${pt.x} ${pt.y}`;
+          else contourPath += ` L ${pt.x} ${pt.y}`;
+        }
+      });
+      contourPath += " Z";
+
+      // Bounding box brackets
+      const { x, y, width, height } = face;
+      const len = Math.min(width, height) * 0.2;
+
+      return (
+        <G key={faceIndex}>
+          {/* All 478 landmarks in one single path! */}
+          <Path
+            d={meshPath}
+            stroke={MESH_COLOR}
+            strokeWidth="0.003"
+            strokeLinecap="round"
+          />
+
+          {/* Face contour */}
+          <Path
+            d={contourPath}
+            fill="none"
+            stroke={MESH_COLOR}
+            strokeWidth="0.003"
+            opacity={0.5}
+          />
+
+          {/* Custom Corner Brackets */}
+          <Path
+            d={`M ${x + len} ${y} Q ${x} ${y} ${x} ${y + len}`}
+            fill="none"
+            stroke={BRACKET_COLOR}
+            strokeWidth="0.004"
+          />
+          <Path
+            d={`M ${x} ${y + height - len} Q ${x} ${y + height} ${x + len} ${y + height}`}
+            fill="none"
+            stroke={BRACKET_COLOR}
+            strokeWidth="0.004"
+          />
+          <Path
+            d={`M ${x + width - len} ${y + height} Q ${x + width} ${y + height} ${x + width} ${y + height - len}`}
+            fill="none"
+            stroke={BRACKET_COLOR}
+            strokeWidth="0.004"
+          />
+          <Path
+            d={`M ${x + width} ${y + len} Q ${x + width} ${y} ${x + width - len} ${y}`}
+            fill="none"
+            stroke={BRACKET_COLOR}
+            strokeWidth="0.004"
+          />
+        </G>
+      );
+    });
+  }, [faces]);
 
   if (!hasPermission) {
     return (
@@ -97,83 +166,12 @@ export default function CameraScreen() {
         outputs={[frameOutput]}
       />
       
-      {/* 5. Draw Billion Dollar UI: Face Mesh and Styled Bounding Box */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
         <Svg height="100%" width="100%" viewBox="0 0 1 1">
-          {faces.map((face, faceIndex) => {
-            // Draw face contour/oval
-            let contourPath = "";
-            CONTOUR_INDICES.forEach((index, i) => {
-              const pt = face.landmarks[index];
-              if (pt) {
-                if (i === 0) contourPath += `M ${pt.x} ${pt.y}`;
-                else contourPath += ` L ${pt.x} ${pt.y}`;
-              }
-            });
-            contourPath += " Z";
-
-            // Bounding box with margin (calculated in native, but we can refine here)
-            const { x, y, width, height } = face;
-            const r = 0.02; // relative corner radius
-            const len = Math.min(width, height) * 0.2;
-
-            return (
-              <G key={faceIndex}>
-                {/* 478 landmarks as small dots */}
-                {face.landmarks.map((pt, i) => (
-                  <Circle
-                    key={i}
-                    cx={pt.x}
-                    cy={pt.y}
-                    r="0.002"
-                    fill={MESH_COLOR}
-                  />
-                ))}
-
-                {/* Face contour */}
-                <Path
-                  d={contourPath}
-                  fill="none"
-                  stroke={CONTOUR_COLOR}
-                  strokeWidth="0.003"
-                />
-
-                {/* Custom Corner Brackets */}
-                {/* Top-left */}
-                <Path
-                  d={`M ${x + len} ${y} Q ${x} ${y} ${x} ${y + len}`}
-                  fill="none"
-                  stroke={BRACKET_COLOR}
-                  strokeWidth="0.004"
-                />
-                {/* Bottom-left */}
-                <Path
-                  d={`M ${x} ${y + height - len} Q ${x} ${y + height} ${x + len} ${y + height}`}
-                  fill="none"
-                  stroke={BRACKET_COLOR}
-                  strokeWidth="0.004"
-                />
-                {/* Bottom-right */}
-                <Path
-                  d={`M ${x + width - len} ${y + height} Q ${x + width} ${y + height} ${x + width} ${y + height - len}`}
-                  fill="none"
-                  stroke={BRACKET_COLOR}
-                  strokeWidth="0.004"
-                />
-                {/* Top-right */}
-                <Path
-                  d={`M ${x + width} ${y + len} Q ${x + width} ${y} ${x + width - len} ${y}`}
-                  fill="none"
-                  stroke={BRACKET_COLOR}
-                  strokeWidth="0.004"
-                />
-              </G>
-            );
-          })}
+          {meshOverlay}
         </Svg>
       </View>
       
-      {/* Absolute back button over the camera feed */}
       <Pressable 
         style={[styles.backButton, { top: insets.top + 16 }]}
         onPress={() => router.back()}

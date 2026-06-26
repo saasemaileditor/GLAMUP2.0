@@ -6,12 +6,6 @@
 ///
 
 #include "JHybridMediaPipeScannerSpec.hpp"
-
-// Forward declaration of `FaceBounds` to properly resolve imports.
-namespace margelo::nitro::anonymous::mediapipescanner { struct FaceBounds; }
-// Forward declaration of `HybridImageSpec` to properly resolve imports.
-namespace margelo::nitro::image { class HybridImageSpec; }
-
 #include "FaceBounds.hpp"
 #include <vector>
 #include "JFaceBounds.hpp"
@@ -23,11 +17,7 @@ namespace margelo::nitro::anonymous::mediapipescanner {
 
   std::shared_ptr<JHybridMediaPipeScannerSpec> JHybridMediaPipeScannerSpec::JavaPart::getJHybridMediaPipeScannerSpec() {
     auto hybridObject = JHybridObject::JavaPart::getJHybridObject();
-    auto castHybridObject = std::dynamic_pointer_cast<JHybridMediaPipeScannerSpec>(hybridObject);
-    if (castHybridObject == nullptr) [[unlikely]] {
-      throw std::runtime_error("Failed to downcast JHybridObject to JHybridMediaPipeScannerSpec!");
-    }
-    return castHybridObject;
+    return std::dynamic_pointer_cast<JHybridMediaPipeScannerSpec>(hybridObject);
   }
 
   jni::local_ref<JHybridMediaPipeScannerSpec::CxxPart::jhybriddata> JHybridMediaPipeScannerSpec::CxxPart::initHybrid(jni::alias_ref<jhybridobject> jThis) {
@@ -36,9 +26,6 @@ namespace margelo::nitro::anonymous::mediapipescanner {
 
   std::shared_ptr<JHybridObject> JHybridMediaPipeScannerSpec::CxxPart::createHybridObject(const jni::local_ref<JHybridObject::JavaPart>& javaPart) {
     auto castJavaPart = jni::dynamic_ref_cast<JHybridMediaPipeScannerSpec::JavaPart>(javaPart);
-    if (castJavaPart == nullptr) [[unlikely]] {
-      throw std::runtime_error("Failed to cast JHybridObject::JavaPart to JHybridMediaPipeScannerSpec::JavaPart!");
-    }
     return std::make_shared<JHybridMediaPipeScannerSpec>(castJavaPart);
   }
 
@@ -48,23 +35,17 @@ namespace margelo::nitro::anonymous::mediapipescanner {
     });
   }
 
-  // Properties
-  
-
-  // Methods
   std::vector<FaceBounds> JHybridMediaPipeScannerSpec::detectFaces(const std::shared_ptr<margelo::nitro::image::HybridImageSpec>& frame) {
-    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<jni::JArrayClass<JFaceBounds>>(jni::alias_ref<margelo::nitro::image::JHybridImageSpec::JavaPart> /* frame */)>("detectFaces");
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<jni::JArrayClass<JFaceBounds>>(jni::alias_ref<margelo::nitro::image::JHybridImageSpec::JavaPart>)>("detectFaces");
     auto __result = method(_javaPart, std::dynamic_pointer_cast<margelo::nitro::image::JHybridImageSpec>(frame)->getJavaPart());
-    return [&](auto&& __input) {
-      size_t __size = __input->size();
-      std::vector<FaceBounds> __vector;
-      __vector.reserve(__size);
-      for (size_t __i = 0; __i < __size; __i++) {
-        auto __element = __input->getElement(__i);
-        __vector.push_back(__element->toCpp());
-      }
-      return __vector;
-    }(__result);
+
+    size_t __size = __result->size();
+    std::vector<FaceBounds> __vector;
+    __vector.reserve(__size);
+    for (size_t __i = 0; __i < __size; __i++) {
+      __vector.push_back(__result->getElement(__i)->toCpp());
+    }
+    return __vector;
   }
 
 } // namespace margelo::nitro::anonymous::mediapipescanner

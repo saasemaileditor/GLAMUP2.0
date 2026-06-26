@@ -7,11 +7,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Define REACT_NATIVE_DIR to help React Native CMake files locate dependencies
 set(REACT_NATIVE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../node_modules/react-native)
 
-# Define the C++ shared library target with a placeholder source file
-add_library(MediaPipeScanner SHARED src/main/cpp/CMakePlaceholder.cpp)
+# Define the C++ shared library target
+add_library(MediaPipeScanner SHARED src/main/cpp/MediaPipeScannerOnLoad.cpp)
 
 # Find dependency packages (prefab)
 find_package(react-native-nitro-image REQUIRED)
+find_package(react-native-nitro-modules REQUIRED)
 
 # Initialize Nitro autolinking
 include(${CMAKE_CURRENT_SOURCE_DIR}/../nitrogen/generated/android/MediaPipeScanner+autolinking.cmake)
@@ -20,5 +21,5 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../nitrogen/generated/android/MediaPipeScann
 target_link_libraries(
   MediaPipeScanner
   react-native-nitro-image::NitroImage
+  react-native-nitro-modules::NitroModules
 )
-

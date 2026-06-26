@@ -8,10 +8,8 @@ import com.google.mediapipe.tasks.core.BaseOptions
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarkerResult
-import com.margelo.nitro.NitroModules
-import com.margelo.nitro.image.Image
-import com.margelo.nitro.image.ImageFormat
-import com.margelo.nitro.image.PixelFormat
+import com.margelo.nitro.image.HybridImage
+import com.margelo.nitro.image.HybridImageSpec
 
 class MediaPipeScanner : HybridMediaPipeScannerSpec() {
     private var landmarker: FaceLandmarker? = null
@@ -42,17 +40,17 @@ class MediaPipeScanner : HybridMediaPipeScannerSpec() {
             landmarker = FaceLandmarker.createFromOptions(context, optionsBuilder.build())
             return landmarker
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to create FaceLandmarker: ${e.message}")
+            Log.e(TAG, "Failed to create FaceLandmarker: \${e.message}")
             return null
         }
     }
 
-    override fun detectFaces(frame: Image): Array<FaceDetectionResult> {
+    override fun detectFaces(frame: HybridImageSpec): Array<FaceBounds> {
         val landmarker = getLandmarker() ?: return emptyArray()
 
-        // 1. Convert Nitro Image to Bitmap
-        // MediaPipe works best with Bitmaps on Android
-        val bitmap = frame.updateBuffer()
+        // 1. Get Bitmap from Nitro Image
+        val image = frame as HybridImage
+        val bitmap = image.bitmap
         val mpImage = BitmapImageBuilder(bitmap).build()
 
         // 2. Detect
@@ -79,7 +77,7 @@ class MediaPipeScanner : HybridMediaPipeScannerSpec() {
                 Landmark(landmark.x().toDouble(), landmark.y().toDouble(), landmark.z().toDouble())
             }.toTypedArray()
 
-            FaceDetectionResult(
+            FaceBounds(
                 minX.toDouble(),
                 minY.toDouble(),
                 (maxX - minX).toDouble(),

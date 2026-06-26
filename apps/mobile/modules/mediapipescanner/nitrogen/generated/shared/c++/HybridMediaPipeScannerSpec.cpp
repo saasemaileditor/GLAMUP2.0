@@ -10,11 +10,9 @@
 namespace margelo::nitro::anonymous::mediapipescanner {
 
   void HybridMediaPipeScannerSpec::loadHybridMethods() {
-    // load base methods/properties
-    HybridObject::loadHybridMethods();
-    // load custom methods/properties
+    // register native methods
     registerHybrids(this, [](Prototype& prototype) {
-      prototype.registerHybridMethod("detectFaces", &HybridMediaPipeScannerSpec::detectFaces);
+      prototype.registerRawHybridMethod("detectFaces", &HybridMediaPipeScannerSpec::detectFaces);
     });
   }
 

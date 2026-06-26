@@ -1,0 +1,61 @@
+///
+/// JLandmark.hpp
+/// Manually updated for landmarks support.
+///
+
+#pragma once
+
+#include <fbjni/fbjni.h>
+#include "Landmark.hpp"
+
+namespace margelo::nitro::anonymous::mediapipescanner {
+
+  using namespace facebook;
+
+  /**
+   * The C++ JNI bridge between the C++ struct "Landmark" and the the Kotlin data class "Landmark".
+   */
+  struct JLandmark final: public jni::JavaClass<JLandmark> {
+  public:
+    static constexpr auto kJavaDescriptor = "Lcom/margelo/nitro/com/anonymous/mediapipescanner/Landmark;";
+
+  public:
+    /**
+     * Convert this Java/Kotlin-based struct to the C++ struct Landmark by copying all values to C++.
+     */
+    [[maybe_unused]]
+    [[nodiscard]]
+    Landmark toCpp() const {
+      static const auto clazz = javaClassStatic();
+      static const auto fieldX = clazz->getField<double>("x");
+      double x = this->getFieldValue(fieldX);
+      static const auto fieldY = clazz->getField<double>("y");
+      double y = this->getFieldValue(fieldY);
+      static const auto fieldZ = clazz->getField<double>("z");
+      double z = this->getFieldValue(fieldZ);
+      return Landmark(
+        x,
+        y,
+        z
+      );
+    }
+
+  public:
+    /**
+     * Create a Java/Kotlin-based struct by copying all values from the given C++ struct to Java.
+     */
+    [[maybe_unused]]
+    static jni::local_ref<JLandmark::javaobject> fromCpp(const Landmark& value) {
+      using JSignature = JLandmark(double, double, double);
+      static const auto clazz = javaClassStatic();
+      static const auto create = clazz->getStaticMethod<JSignature>("fromCpp");
+      return create(
+        clazz,
+        value.x,
+        value.y,
+        value.z
+      );
+    }
+  };
+
+} // namespace margelo::nitro::anonymous::mediapipescanner

@@ -8,48 +8,19 @@
 package com.margelo.nitro.com.anonymous.mediapipescanner
 
 import androidx.annotation.Keep
-import com.facebook.jni.HybridData
 import com.facebook.proguard.annotations.DoNotStrip
-import com.margelo.nitro.image.HybridImageSpec
 import com.margelo.nitro.core.HybridObject
+import com.margelo.nitro.image.HybridImageSpec
 
 /**
- * A Kotlin class representing the MediaPipeScanner HybridObject.
- * Implement this abstract class to create Kotlin-based instances of MediaPipeScanner.
+ * An abstract base class for "MediaPipeScanner".
+ * Inherit from this class to create a Kotlin implementation of "MediaPipeScanner".
+ * The properties and methods of this class will be exposed to JavaScript.
  */
 @DoNotStrip
 @Keep
-@Suppress(
-  "KotlinJniMissingFunction", "unused",
-  "RedundantSuppression", "RedundantUnitReturnType", "SimpleRedundantLet",
-  "LocalVariableName", "PropertyName", "PrivatePropertyName", "FunctionName"
-)
 abstract class HybridMediaPipeScannerSpec: HybridObject() {
-  // Properties
-  
-
-  // Methods
   @DoNotStrip
   @Keep
-  abstract fun detectFaces(frame: com.margelo.nitro.image.HybridImageSpec): Array<FaceDetectionResult>
-
-  // Default implementation of `HybridObject.toString()`
-  override fun toString(): String {
-    return "[HybridObject MediaPipeScanner]"
-  }
-
-  // C++ backing class
-  @DoNotStrip
-  @Keep
-  protected open class CxxPart(javaPart: HybridMediaPipeScannerSpec): HybridObject.CxxPart(javaPart) {
-    // C++ JHybridMediaPipeScannerSpec::CxxPart::initHybrid(...)
-    external override fun initHybrid(): HybridData
-  }
-  override fun createCxxPart(): CxxPart {
-    return CxxPart(this)
-  }
-
-  companion object {
-    protected const val TAG = "HybridMediaPipeScannerSpec"
-  }
+  abstract fun detectFaces(frame: HybridImageSpec): Array<FaceBounds>
 }
